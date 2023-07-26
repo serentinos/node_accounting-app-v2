@@ -4,7 +4,17 @@ const expenseService = require('../services/expenses');
 const userService = require('../services/users');
 const utils = require('../utils/utils.js');
 
-const getByQuery = (req, res) => {
+const getAll = async(req, res) => {
+  try {
+    const allExpenses = await expenseService.getAll();
+
+    res.send(allExpenses);
+  } catch (error) {
+    res.sendStatus(503);
+  }
+};
+
+const getByQuery = async(req, res) => {
   const query = req.query;
   const queryVariations = ['userId', 'category', 'from', 'to'];
 
@@ -21,12 +31,16 @@ const getByQuery = (req, res) => {
     return;
   }
 
-  const filteredExpenses = expenseService.getByParams(query);
+  try {
+    const filteredExpenses = await expenseService.getByParams(query);
 
-  res.send(filteredExpenses);
+    res.send(filteredExpenses);
+  } catch (error) {
+    res.sendStatus(503);
+  }
 };
 
-const getById = (req, res) => {
+const getById = async(req, res) => {
   const { expenseId } = req.params;
 
   if (isNaN(Number(expenseId))) {
@@ -37,20 +51,24 @@ const getById = (req, res) => {
     return;
   }
 
-  const expense = expenseService.getById(expenseId);
+  try {
+    const expense = await expenseService.getById(expenseId);
 
-  if (!expense) {
-    res.status(404).send(
-      { message: 'Cannot found expense using provided ID' }
-    );
+    if (!expense) {
+      res.status(404).send(
+        { message: 'Cannot found expense using provided ID' }
+      );
 
-    return;
+      return;
+    };
+
+    res.send(expense);
+  } catch (error) {
+    res.sendStatus(503);
   }
-
-  res.send(expense);
 };
 
-const createNew = (req, res) => {
+const createNew = async(req, res) => {
   const { userId, spentAt } = req.body;
   const isDateInvalid = utils.validateDate(spentAt);
   const requiredFields = ['userId', 'spentAt', 'title', 'amount', 'category'];
@@ -75,36 +93,48 @@ const createNew = (req, res) => {
     return;
   }
 
-  if (!userService.getById(userId)) {
-    res.status(404).send(
-      { message: 'Could find user with provided userId' }
-    );
+  try {
+    const isUserExists = await userService.getById(userId);
 
-    return;
+    if (!isUserExists) {
+      res.status(404).send(
+        { message: 'Could find user with provided userId' }
+      );
+
+      return;
+    }
+
+    const newExpense = await expenseService.create(req.body);
+
+    res.status(201);
+    res.send(newExpense);
+  } catch (error) {
+    res.sendStatus(503);
   }
-
-  const newExpense = expenseService.create(req.body);
-
-  res.status(201);
-  res.send(newExpense);
 };
 
-const removeById = (req, res) => {
+const removeById = async(req, res) => {
   const { expenseId } = req.params;
 
-  if (!expenseService.getById(expenseId)) {
-    res.status(404).send(
-      { message: 'Could find expense with provided userId' }
-    );
+  try {
+    const isExpenseExist = await expenseService.getById(expenseId);
 
-    return;
+    if (!isExpenseExist) {
+      res.status(404).send(
+        { message: 'Could find expense with provided userId' }
+      );
+
+      return;
+    }
+
+    await expenseService.remove(expenseId);
+    res.sendStatus(204);
+  } catch (error) {
+    res.sendStatus(503);
   }
-
-  expenseService.remove(expenseId);
-  res.sendStatus(204);
 };
 
-const editById = (req, res) => {
+const editById = async(req, res) => {
   const { expenseId } = req.params;
   const dataToEdit = req.body;
   const { spentAt } = req.body;
@@ -132,14 +162,6 @@ const editById = (req, res) => {
     return;
   }
 
-  if (!expenseService.getById(expenseId)) {
-    res.status(404).send(
-      { message: 'Could find expense this provided ID' }
-    );
-
-    return;
-  }
-
   if (spentAt && !utils.validateDate(spentAt)) {
     res.status(400).send(
       { message: `Edited field 'spendAt' is not valid` }
@@ -148,9 +170,25 @@ const editById = (req, res) => {
     return;
   }
 
-  const editedExpense = expenseService.edit(expenseId, dataToEdit);
+  try {
+    const isExpenseExist = await expenseService.getById(expenseId);
 
-  res.send(editedExpense);
+    if (!isExpenseExist) {
+      res.status(404).send(
+        { message: 'Could find expense this provided ID' }
+      );
+
+      return;
+    }
+
+    await expenseService.edit(expenseId, dataToEdit);
+
+    const editedExpense = expenseService.getById(expenseId);
+
+    res.send(editedExpense);
+  } catch (error) {
+    res.sendStatus(503);
+  }
 };
 
 module.exports = {
@@ -159,4 +197,5 @@ module.exports = {
   getById,
   removeById,
   editById,
+  getAll,
 };

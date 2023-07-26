@@ -1,46 +1,33 @@
 'use strict';
 
-const utils = require('../utils/utils.js');
+const User = require('../db/models/user.model.js');
 
-let users = [];
-
-const getAll = () => {
-  return users;
+const getAll = async() => {
+  return User.findAll({
+    attributes: { exclude: 'createdAt' },
+  });
 };
 
 const getById = (userId) => {
-  const foundUser = users.find(user => user.id === +userId);
-
-  return foundUser || null;
+  return User.findOne({
+    where: { id: userId },
+  });
 };
 
 const create = (userName) => {
-  const newUser = {
-    id: utils.getRandomId(),
-    name: userName,
-  };
-
-  users.push(newUser);
-
-  return newUser;
+  return User.create({ name: userName });
 };
 
 const remove = (userId) => {
-  users = users.filter(user => user.id !== +userId);
+  return User.destroy({
+    where: { id: userId },
+  });
 };
 
 const edit = (userId, newData) => {
-  users = users.map(user => {
-    if (user.id !== +userId) {
-      return user;
-    }
-
-    return Object.assign(user, newData);
+  return User.update(newData, {
+    where: { id: userId },
   });
-
-  const editedUser = getById(userId);
-
-  return editedUser;
 };
 
 module.exports = {
@@ -49,5 +36,4 @@ module.exports = {
   getById,
   remove,
   edit,
-  users,
 };
