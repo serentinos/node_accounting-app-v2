@@ -9,7 +9,7 @@ const getById = (expenseId) => {
 const getByParams = async(params) => {
   const { userId, category, from, to } = params;
 
-  const allExpenses = Expense.findAll();
+  const allExpenses = await Expense.findAll();
 
   const filteredExpenses = allExpenses.filter(expense => {
     let isMatch = true;
