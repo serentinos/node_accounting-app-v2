@@ -6,42 +6,42 @@ const getById = (expenseId) => {
   return Expense.findByPk(expenseId);
 };
 
-const getByParams = (params) => {
-  // const { userId, category, from, to } = params;
+const getByParams = async(params) => {
+  const { userId, category, from, to } = params;
 
-  // const filteredExpenses = expenses.filter(expense => {
-  //   let isMatch = true;
+  const allExpenses = Expense.findAll();
 
-  //   if (userId) {
-  //     isMatch = expense.userId === +userId;
-  //   }
+  const filteredExpenses = allExpenses.filter(expense => {
+    let isMatch = true;
 
-  //   if (category) {
-  //     isMatch = typeof category === 'string'
-  //       ? category === expense.category
-  //       : category.includes(expense.category);
-  //   }
+    if (userId) {
+      isMatch = expense.userId === +userId;
+    }
 
-  //   if (from) {
-  //     const dateFrom = new Date(from);
-  //     const currentDate = new Date(expense.spentAt);
+    if (category) {
+      isMatch = typeof category === 'string'
+        ? category === expense.category
+        : category.includes(expense.category);
+    }
 
-  //     isMatch = currentDate >= dateFrom;
-  //   }
+    if (from) {
+      const dateFrom = new Date(from);
+      const currentDate = new Date(expense.spentAt);
 
-  //   if (to) {
-  //     const dateTo = new Date(to);
-  //     const currentDate = new Date(expense.spentAt);
+      isMatch = currentDate >= dateFrom;
+    }
 
-  //     isMatch = currentDate <= dateTo;
-  //   }
+    if (to) {
+      const dateTo = new Date(to);
+      const currentDate = new Date(expense.spentAt);
 
-  //   return isMatch;
-  // });
+      isMatch = currentDate <= dateTo;
+    }
 
-  return Expense.findAll({
-    where: params,
+    return isMatch;
   });
+
+  return filteredExpenses;
 };
 
 const create = (expenseData) => {
